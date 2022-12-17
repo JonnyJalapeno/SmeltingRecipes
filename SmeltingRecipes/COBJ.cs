@@ -1,4 +1,5 @@
 using Mutagen.Bethesda.Plugins;
+using Mutagen.Bethesda.Skyrim;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,5 +12,6 @@ namespace SmeltingRecipes
     {
         public FormKey ingot { get; set; }
         public ushort amount { get; set; }
+        public Condition? cond;
     }
 }

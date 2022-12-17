@@ -21,7 +21,6 @@ namespace SmeltingRecipes
 
         public static void RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
         {
-
             Dictionary<FormKey, COBJ> armorDepo = new Dictionary<FormKey, COBJ>();
             Dictionary<FormKey, COBJ> weaponDepo = new Dictionary<FormKey, COBJ>();
             foreach (var COBJGetter in state.LoadOrder.PriorityOrder.ConstructibleObject().WinningOverrides())
@@ -43,7 +42,7 @@ namespace SmeltingRecipes
                                         ushort count = 0;
                                         foreach (IContainerEntryGetter? item in COBJGetter.Items)
                                         {
-                                            if (item.Item.Item.TryResolve(state.LinkCache, out var EDID) && EDID.EditorID?.Contains("ingot", StringComparison.OrdinalIgnoreCase) == true)
+                                            if (item.Item.Item.TryResolve(state.LinkCache, out var EDID) && (EDID.EditorID?.Contains("ingot", StringComparison.OrdinalIgnoreCase) == true || EDID.EditorID?.Contains("ore", StringComparison.OrdinalIgnoreCase) == true))
                                             {
                                                 if (item.Item.Count > count)
                                                 {
@@ -53,6 +52,12 @@ namespace SmeltingRecipes
                                                     count = (ushort)item.Item.Count;
                                                 }
                                             }
+                                        }
+                                        foreach (var condition in COBJGetter.Conditions)
+                                        {
+                                            if (condition is not IConditionFloatGetter || condition.Data is not IFunctionConditionDataGetter) continue;
+                                            if ((condition.Data as IFunctionConditionDataGetter)!.Function != Condition.Function.HasPerk) continue;
+                                            weap.cond = condition.DeepCopy();
                                         }
                                         if (go == true) { weaponDepo.Add(COBJGetter.CreatedObject.FormKey, weap); }
                                     }
@@ -65,7 +70,7 @@ namespace SmeltingRecipes
                                         ushort count = 0;
                                         foreach (IContainerEntryGetter? item in COBJGetter.Items)
                                         {
-                                            if (item.Item.Item.TryResolve(state.LinkCache, out var EDID) && EDID.EditorID?.Contains("ingot", StringComparison.OrdinalIgnoreCase) == true)
+                                            if (item.Item.Item.TryResolve(state.LinkCache, out var EDID) && (EDID.EditorID?.Contains("ingot", StringComparison.OrdinalIgnoreCase) == true || EDID.EditorID?.Contains("ore", StringComparison.OrdinalIgnoreCase) == true))
                                             {
 
                                                 if (item.Item.Count > count)
@@ -76,6 +81,12 @@ namespace SmeltingRecipes
                                                     count = (ushort)item.Item.Count;
                                                 }
                                             }
+                                        }
+                                        foreach (var condition in COBJGetter.Conditions)
+                                        {
+                                            if (condition is not IConditionFloatGetter || condition.Data is not IFunctionConditionDataGetter) continue;
+                                            if ((condition.Data as IFunctionConditionDataGetter)!.Function != Condition.Function.HasPerk) continue;
+                                            armo.cond = condition.DeepCopy();
                                         }
                                         if (go == true) { armorDepo.Add(COBJGetter.CreatedObject.FormKey, armo); }
                                     }
@@ -113,6 +124,18 @@ namespace SmeltingRecipes
                 temp.Item.Item.FormKey = armorGetter.FormKey;
                 temp.Item.Count = 1;
                 recipe.Items.SetTo(temp);
+                
+                ConditionFloat cond = new ConditionFloat();
+                FunctionConditionData func = new FunctionConditionData();
+                func.Function = Condition.Function.GetItemCount;
+                func.ParameterOneRecord = temp.Item.Item;
+                cond.Data = func;
+                cond.CompareOperator = CompareOperator.GreaterThanOrEqualTo;
+                cond.ComparisonValue = 1;
+                recipe.Conditions.Add(cond);
+                if (result.cond != null) {
+                    recipe.Conditions.Add(result.cond);
+                }
 
                 recipe.CreatedObject.SetTo(result.ingot);
                 recipe.CreatedObjectCount = result.amount;
@@ -144,6 +167,20 @@ namespace SmeltingRecipes
                 temp.Item.Item.FormKey = weaponGetter.FormKey;
                 temp.Item.Count = 1;
                 recipe.Items.SetTo(temp);
+
+                ConditionFloat cond = new ConditionFloat();
+                FunctionConditionData func = new FunctionConditionData();
+                func.Function = Condition.Function.GetItemCount;
+                func.ParameterOneRecord = temp.Item.Item;
+                cond.Data = func;
+                cond.CompareOperator = CompareOperator.GreaterThanOrEqualTo;
+                cond.ComparisonValue = 1;
+                recipe.Conditions.Add(cond);
+
+                if (result.cond != null)
+                {
+                    recipe.Conditions.Add(result.cond);
+                }
 
                 recipe.CreatedObject.SetTo(result.ingot);
                 recipe.CreatedObjectCount = result.amount;
